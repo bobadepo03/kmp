@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Kevin Music Player</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#1f2235;
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+padding:20px;
+color:white;
+}
+
+.player{
+width:340px;
+background:
+linear-gradient(
+145deg,
+#343752,
+#2a2d45
+);
+border-radius:25px;
+padding:20px;
+box-shadow:
+0 10px 30px rgba(0,0,0,.5),
+inset 0 1px 1px rgba(255,255,255,.1);
+}
+
+.topbar{
+display:flex;
+justify-content:space-between;
+margin-bottom:20px;
+}
+
+.topbar button{
+background:none;
+border:none;
+color:white;
+font-size:20px;
+cursor:pointer;
+}
+
+.music-info{
+text-align:center;
+margin-bottom:20px;
+}
+
+.music-info h2{
+font-size:20px;
+margin-bottom:5px;
+}
+
+.music-info p{
+font-size:14px;
+color:#ccc;
+}
+
+.search-box{
+display:flex;
+gap:10px;
+margin-bottom:20px;
+}
+
+.search-box input{
+flex:1;
+padding:12px;
+border:none;
+border-radius:12px;
+outline:none;
+background:#444866;
+color:white;
+}
+
+.search-box button{
+width:55px;
+border:none;
+border-radius:12px;
+background:white;
+cursor:pointer;
+font-size:18px;
+}
+
+.time{
+display:flex;
+justify-content:space-between;
+font-size:12px;
+color:#ccc;
+margin-bottom:8px;
+}
+
+.progress{
+width:100%;
+height:6px;
+background:#666;
+border-radius:20px;
+overflow:hidden;
+cursor:pointer;
+margin-bottom:20px;
+}
+
+.progress-bar{
+width:0%;
+height:100%;
+background:white;
+transition:.1s;
+}
+
+.controls{
+display:flex;
+justify-content:center;
+align-items:center;
+gap:20px;
+margin-bottom:20px;
+}
+
+.controls button{
+border:none;
+cursor:pointer;
+}
+
+.small{
+width:42px;
+height:42px;
+border-radius:50%;
+background:#4c5072;
+color:white;
+font-size:16px;
+}
+
+#playBtn{
+width:60px;
+height:60px;
+border-radius:50%;
+background:white;
+color:#222;
+font-size:22px;
+}
+
+.results,
+.playlist{
+max-height:220px;
+overflow:auto;
+}
+
+.song{
+position:relative;
+background:#3b3f5d;
+padding:12px;
+border-radius:12px;
+margin-bottom:10px;
+cursor:pointer;
+}
+
+.song h4{
+font-size:14px;
+margin-bottom:4px;
+padding-right:35px;
+}
+
+.song p{
+font-size:12px;
+color:#ccc;
+}
+
+.deleteBtn{
+position:absolute;
+right:10px;
+top:50%;
+transform:translateY(-50%);
+width:28px;
+height:28px;
+border:none;
+border-radius:50%;
+background:#ff4d4d;
+color:white;
+cursor:pointer;
+}
+
+iframe{
+display:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="player">
+
+<div class="topbar">
+
+<button>☰</button>
+
+<button>♡</button>
+
+<button>＋</button>
+
+</div>
+
+<div class="music-info">
+
+<h2 id="title">
+Song title
+</h2>
+
+<p id="channel">
+Singer name
+</p>
+
+</div>
+
+<div class="search-box">
+
+<input
+type="text"
+id="searchInput"
+placeholder="Cari music youtube..."
+>
+
+<button id="searchBtn">
+
+🔍
+
+</button>
+
+</div>
+
+<div class="time">
+
+<span id="currentTime">
+0:00
+</span>
+
+<span id="duration">
+3:00
+</span>
+
+</div>
+
+<div
+class="progress"
+id="progressContainer">
+
+<div
+class="progress-bar"
+id="progressBar">
+</div>
+
+</div>
+
+<div class="controls">
+
+<button
+class="small"
+id="prevBtn">
+
+⏮
+
+</button>
+
+<button id="playBtn">
+
+▶
+
+</button>
+
+<button
+class="small"
+id="nextBtn">
+
+⏭
+
+</button>
+
+</div>
+
+<div
+class="results"
+id="results">
+</div>
+
+<h3
+style="
+margin-top:15px;
+margin-bottom:10px;
+font-size:14px;
+color:#ccc;
+">
+
+Playlist
+
+</h3>
+
+<div
+class="playlist"
+id="playlistBox">
+</div>
+
+</div>
+
+<iframe id="player"></iframe>
+
+<script>
+
+const API_KEY =
+"AIzaSyC507JjPNAqCt4R3m068i_YuivTXVMFLlw";
+
+const searchInput =
+document.getElementById(
+"searchInput"
+);
+
+const searchBtn =
+document.getElementById(
+"searchBtn"
+);
+
+const results =
+document.getElementById(
+"results"
+);
+
+const title =
+document.getElementById(
+"title"
+);
+
+const channel =
+document.getElementById(
+"channel"
+);
+
+const iframe =
+document.getElementById(
+"player"
+);
+
+const playBtn =
+document.getElementById(
+"playBtn"
+);
+
+const playlistBox =
+document.getElementById(
+"playlistBox"
+);
+
+const progressBar =
+document.getElementById(
+"progressBar"
+);
+
+const progressContainer =
+document.getElementById(
+"progressContainer"
+);
+
+const currentTimeText =
+document.getElementById(
+"currentTime"
+);
+
+const durationText =
+document.getElementById(
+"duration"
+);
+
+let playlist = [];
+
+let currentIndex = 0;
+
+let currentVideo = "";
+
+let isPlaying = false;
+
+let currentTime = 0;
+
+let duration = 180;
+
+let progressInterval;
+
+// SEARCH MUSIC
+
+async function searchMusic(){
+
+const query =
+searchInput.value;
+
+if(!query) return;
+
+results.innerHTML =
+"Searching...";
+
+const res = await fetch(
+
+`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoCategoryId=10&maxResults=10&key=${API_KEY}`
+
+);
+
+const data =
+await res.json();
+
+results.innerHTML = "";
+
+data.items.forEach(item=>{
+
+const song = {
+
+id:item.id.videoId,
+
+title:
+item.snippet.title,
+
+artist:
+item.snippet.channelTitle
+
+};
+
+const div =
+document.createElement(
+"div"
+);
+
+div.className =
+"song";
+
+div.innerHTML = `
+
+<h4>
+${song.title}
+</h4>
+
+<p>
+${song.artist}
+</p>
+
+`;
+
+div.onclick = ()=>{
+
+playlist.push(song);
+
+currentIndex =
+playlist.length - 1;
+
+renderPlaylist();
+
+playMusic(
+song.id,
+song.title,
+song.artist
+);
+
+};
+
+results.appendChild(div);
+
+});
+
+}
+
+searchBtn.onclick =
+searchMusic;
+
+searchInput
+.addEventListener(
+"keydown",
+(e)=>{
+
+if(
+e.key === "Enter" ||
+e.keyCode === 13
+){
+
+e.preventDefault();
+
+searchMusic();
+
+}
+
+});
+
+// PLAY MUSIC
+
+function playMusic(
+id,
+songTitle,
+artist
+){
+
+currentVideo = id;
+
+title.innerText =
+songTitle;
+
+channel.innerText =
+artist;
+
+iframe.src =
+
+`https://www.youtube.com/embed/${id}?autoplay=1`;
+
+isPlaying = true;
+
+playBtn.innerText =
+"⏸";
+
+currentTime = 0;
+
+duration = 180;
+
+startProgress();
+
+}
+
+// PLAY / PAUSE
+
+playBtn.onclick = ()=>{
+
+if(!currentVideo)
+return;
+
+if(isPlaying){
+
+isPlaying = false;
+
+playBtn.innerText =
+"▶";
+
+}else{
+
+isPlaying = true;
+
+playBtn.innerText =
+"⏸";
+
+}
+
+};
+
+// NEXT SONG
+
+function nextSong(){
+
+if(!playlist.length)
+return;
+
+currentIndex++;
+
+if(
+currentIndex >=
+playlist.length
+){
+
+currentIndex = 0;
+
+}
+
+const song =
+playlist[currentIndex];
+
+playMusic(
+song.id,
+song.title,
+song.artist
+);
+
+}
+
+// PREV SONG
+
+function prevSong(){
+
+if(!playlist.length)
+return;
+
+currentIndex--;
+
+if(currentIndex < 0){
+
+currentIndex =
+playlist.length - 1;
+
+}
+
+const song =
+playlist[currentIndex];
+
+playMusic(
+song.id,
+song.title,
+song.artist
+);
+
+}
+
+document
+.getElementById(
+"nextBtn"
+)
+.onclick = nextSong;
+
+document
+.getElementById(
+"prevBtn"
+)
+.onclick = prevSong;
+
+// PROGRESS SYSTEM
+
+function startProgress(){
+
+clearInterval(
+progressInterval
+);
+
+progressInterval =
+setInterval(()=>{
+
+if(isPlaying){
+
+currentTime++;
+
+if(currentTime >= duration){
+
+nextSong();
+
+currentTime = 0;
+
+}
+
+updateProgress();
+
+}
+
+},1000);
+
+}
+
+function updateProgress(){
+
+if(
+duration === undefined ||
+isNaN(duration)
+){
+
+duration = 180;
+
+}
+
+const percent =
+
+(currentTime / duration)
+* 100;
+
+progressBar.style.width =
+percent + "%";
+
+currentTimeText.innerText =
+formatTime(
+currentTime || 0
+);
+
+durationText.innerText =
+formatTime(
+duration || 0
+);
+
+}
+
+function formatTime(sec){
+
+if(
+sec === undefined ||
+isNaN(sec)
+){
+
+sec = 0;
+
+}
+
+const minutes =
+Math.floor(sec / 60);
+
+const seconds =
+Math.floor(sec % 60);
+
+return (
+minutes +
+":" +
+(seconds < 10
+? "0" + seconds
+: seconds)
+);
+
+}
+
+// SEEK BAR
+
+progressContainer
+.addEventListener(
+"click",
+(e)=>{
+
+const width =
+progressContainer.clientWidth;
+
+const clickX =
+e.offsetX;
+
+const percent =
+clickX / width;
+
+currentTime =
+Math.floor(
+percent * duration
+);
+
+updateProgress();
+
+});
+
+// PLAYLIST
+
+function renderPlaylist(){
+
+playlistBox.innerHTML =
+"";
+
+playlist.forEach(
+(song,index)=>{
+
+const div =
+document.createElement(
+"div"
+);
+
+div.className =
+"song";
+
+div.innerHTML = `
+
+<h4>
+${song.title}
+</h4>
+
+<p>
+${song.artist}
+</p>
+
+<button
+class="deleteBtn">
+
+✕
+
+</button>
+
+`;
+
+div.onclick = (e)=>{
+
+if(
+e.target.classList
+.contains(
+"deleteBtn"
+)
+) return;
+
+currentIndex =
+index;
+
+playMusic(
+song.id,
+song.title,
+song.artist
+);
+
+};
+
+div.querySelector(
+".deleteBtn"
+)
+.onclick = ()=>{
+
+playlist.splice(
+index,
+1
+);
+
+renderPlaylist();
+
+};
+
+playlistBox
+.appendChild(div);
+
+});
+
+}
+
+</script>
+
+</body>
+</html>
