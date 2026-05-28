@@ -701,24 +701,27 @@ minutes +
 }
 
 // ======================
-// SEEK
+// SEEK SUPPORT MOBILE
 // ======================
 
-progressContainer
-.addEventListener(
-"click",
-(e)=>{
+function seekMusic(clientX){
 
 if(!player) return;
 
-const width =
-progressContainer.clientWidth;
+const rect =
 
-const clickX =
-e.offsetX;
+progressContainer
+.getBoundingClientRect();
+
+const offsetX =
+
+clientX - rect.left;
+
+const width =
+rect.width;
 
 const percent =
-clickX / width;
+offsetX / width;
 
 const duration =
 player.getDuration();
@@ -726,6 +729,32 @@ player.getDuration();
 player.seekTo(
 duration * percent,
 true
+);
+
+}
+
+// DESKTOP
+
+progressContainer
+.addEventListener(
+"click",
+(e)=>{
+
+seekMusic(
+e.clientX
+);
+
+});
+
+// MOBILE TOUCH
+
+progressContainer
+.addEventListener(
+"touchstart",
+(e)=>{
+
+seekMusic(
+e.touches[0].clientX
 );
 
 });
