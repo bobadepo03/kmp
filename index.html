@@ -511,9 +511,11 @@ playlist.length - 1;
 
 renderPlaylist();
 
-playMusic(song);
-
+div.onclick = () => {
+  // Hanya play, tidak push ke playlist
+  playMusic(song);
 };
+
 
 results.appendChild(div);
 
@@ -882,9 +884,17 @@ playlistBox
 const addBtn = document.querySelector('.topbar button:last-child');
 
 addBtn.onclick = () => {
-  if (!player || !player.getVideoData) return;
+  if (!player || !player.getVideoData) {
+    showNotification('Tidak ada lagu yang sedang diputar!');
+    return;
+  }
 
   const videoData = player.getVideoData();
+  if (!videoData || !videoData.video_id) {
+    showNotification('Tidak ada lagu yang sedang diputar!');
+    return;
+  }
+
   const currentSong = {
     id: videoData.video_id,
     title: videoData.title || title.innerText,
@@ -917,6 +927,7 @@ function showNotification(message) {
   document.body.appendChild(notif);
   setTimeout(() => notif.remove(), 2000);
 }
+
 
 </script>
 
