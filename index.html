@@ -193,8 +193,10 @@ color:white;
 cursor:pointer;
 }
 
-iframe{
-display:none;
+#player{
+width:0;
+height:0;
+overflow:hidden;
 }
 
 </style>
@@ -249,7 +251,7 @@ placeholder="Cari music youtube..."
 </span>
 
 <span id="duration">
-3:00
+0:00
 </span>
 
 </div>
@@ -315,7 +317,9 @@ id="playlistBox">
 
 </div>
 
-<iframe id="player"></iframe>
+<div id="player"></div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
 
@@ -345,11 +349,6 @@ document.getElementById(
 const channel =
 document.getElementById(
 "channel"
-);
-
-const iframe =
-document.getElementById(
-"player"
 );
 
 const playBtn =
@@ -382,21 +381,47 @@ document.getElementById(
 "duration"
 );
 
+let player;
+
 let playlist = [];
 
 let currentIndex = 0;
 
-let currentVideo = "";
-
 let isPlaying = false;
-
-let currentTime = 0;
-
-let duration = 180;
 
 let progressInterval;
 
+// ======================
+// YOUTUBE READY
+// ======================
+
+function onYouTubeIframeAPIReady(){
+
+player = new YT.Player(
+'player',
+{
+
+height:'0',
+width:'0',
+
+playerVars:{
+autoplay:1
+},
+
+events:{
+
+'onStateChange':
+onPlayerStateChange
+
+}
+
+});
+
+}
+
+// ======================
 // SEARCH MUSIC
+// ======================
 
 async function searchMusic(){
 
@@ -462,11 +487,7 @@ playlist.length - 1;
 
 renderPlaylist();
 
-playMusic(
-song.id,
-song.title,
-song.artist
-);
+playMusic(song);
 
 };
 
@@ -497,47 +518,42 @@ searchMusic();
 
 });
 
+// ======================
 // PLAY MUSIC
+// ======================
 
-function playMusic(
-id,
-songTitle,
-artist
-){
-
-currentVideo = id;
+function playMusic(song){
 
 title.innerText =
-songTitle;
+song.title;
 
 channel.innerText =
-artist;
+song.artist;
 
-iframe.src =
-
-`https://www.youtube.com/embed/${id}?autoplay=1`;
+player.loadVideoById(
+song.id
+);
 
 isPlaying = true;
 
 playBtn.innerText =
 "⏸";
 
-currentTime = 0;
-
-duration = 180;
-
 startProgress();
 
 }
 
-// PLAY / PAUSE
+// ======================
+// PLAY PAUSE
+// ======================
 
 playBtn.onclick = ()=>{
 
-if(!currentVideo)
-return;
+if(!player) return;
 
 if(isPlaying){
+
+player.pauseVideo();
 
 isPlaying = false;
 
@@ -545,6 +561,8 @@ playBtn.innerText =
 "▶";
 
 }else{
+
+player.playVideo();
 
 isPlaying = true;
 
@@ -555,7 +573,9 @@ playBtn.innerText =
 
 };
 
-// NEXT SONG
+// ======================
+// NEXT
+// ======================
 
 function nextSong(){
 
@@ -573,18 +593,15 @@ currentIndex = 0;
 
 }
 
-const song =
-playlist[currentIndex];
-
 playMusic(
-song.id,
-song.title,
-song.artist
+playlist[currentIndex]
 );
 
 }
 
-// PREV SONG
+// ======================
+// PREV
+// ======================
 
 function prevSong(){
 
@@ -600,13 +617,8 @@ playlist.length - 1;
 
 }
 
-const song =
-playlist[currentIndex];
-
 playMusic(
-song.id,
-song.title,
-song.artist
+playlist[currentIndex]
 );
 
 }
@@ -623,7 +635,9 @@ document
 )
 .onclick = prevSong;
 
-// PROGRESS SYSTEM
+// ======================
+// PROGRESS
+// ======================
 
 function startProgress(){
 
@@ -634,19 +648,30 @@ progressInterval
 progressInterval =
 setInterval(()=>{
 
-if(isPlaying){
+if(
+player &&
+isPlaying
+){
 
-currentTime++;
+const current =
+player.getCurrentTime();
 
-if(currentTime >= duration){
+const duration =
+player.getDuration();
 
-nextSong();
+const percent =
 
-currentTime = 0;
+(current / duration)
+* 100;
 
-}
+progressBar.style.width =
+percent + "%";
 
-updateProgress();
+currentTimeText.innerText =
+formatTime(current);
+
+durationText.innerText =
+formatTime(duration);
 
 }
 
@@ -654,53 +679,16 @@ updateProgress();
 
 }
 
-function updateProgress(){
-
-if(
-duration === undefined ||
-isNaN(duration)
-){
-
-duration = 180;
-
-}
-
-const percent =
-
-(currentTime / duration)
-* 100;
-
-progressBar.style.width =
-percent + "%";
-
-currentTimeText.innerText =
-formatTime(
-currentTime || 0
-);
-
-durationText.innerText =
-formatTime(
-duration || 0
-);
-
-}
-
 function formatTime(sec){
 
-if(
-sec === undefined ||
-isNaN(sec)
-){
-
-sec = 0;
-
-}
+sec =
+Math.floor(sec);
 
 const minutes =
 Math.floor(sec / 60);
 
 const seconds =
-Math.floor(sec % 60);
+sec % 60;
 
 return (
 minutes +
@@ -712,12 +700,16 @@ minutes +
 
 }
 
-// SEEK BAR
+// ======================
+// SEEK
+// ======================
 
 progressContainer
 .addEventListener(
 "click",
 (e)=>{
+
+if(!player) return;
 
 const width =
 progressContainer.clientWidth;
@@ -728,16 +720,38 @@ e.offsetX;
 const percent =
 clickX / width;
 
-currentTime =
-Math.floor(
-percent * duration
-);
+const duration =
+player.getDuration();
 
-updateProgress();
+player.seekTo(
+duration * percent,
+true
+);
 
 });
 
+// ======================
+// AUTO NEXT
+// ======================
+
+function onPlayerStateChange(
+event
+){
+
+if(
+event.data ===
+YT.PlayerState.ENDED
+){
+
+nextSong();
+
+}
+
+}
+
+// ======================
 // PLAYLIST
+// ======================
 
 function renderPlaylist(){
 
@@ -786,11 +800,7 @@ e.target.classList
 currentIndex =
 index;
 
-playMusic(
-song.id,
-song.title,
-song.artist
-);
+playMusic(song);
 
 };
 
