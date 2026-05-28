@@ -447,102 +447,51 @@ onPlayerStateChange
 // SEARCH MUSIC
 // ======================
 
-async function searchMusic(){
+async function searchMusic() {
+  const query = searchInput.value;
+  if (!query) return;
 
-const query =
-searchInput.value;
+  results.innerHTML = "Searching...";
 
-if(!query) return;
+  const res = await fetch(
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoCategoryId=10&maxResults=10&key=${API_KEY}`
+  );
 
-results.innerHTML =
-"Searching...";
+  const data = await res.json();
+  results.innerHTML = "";
 
-const res = await fetch(
+  data.items.forEach(item => {
+    const song = {
+      id: item.id.videoId,
+      title: item.snippet.title,
+      artist: item.snippet.channelTitle
+    };
 
-`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&videoCategoryId=10&maxResults=10&key=${API_KEY}`
+    const div = document.createElement("div");
+    div.className = "song";
+    div.innerHTML = `
+      <h4>${song.title}</h4>
+      <p>${song.artist}</p>
+    `;
 
-);
+    // Klik hasil pencarian hanya play lagu
+    div.onclick = () => {
+      playMusic(song);
+    };
 
-const data =
-await res.json();
-
-results.innerHTML = "";
-
-data.items.forEach(item=>{
-
-const song = {
-
-id:item.id.videoId,
-
-title:
-item.snippet.title,
-
-artist:
-item.snippet.channelTitle
-
-};
-
-const div =
-document.createElement(
-"div"
-);
-
-div.className =
-"song";
-
-div.innerHTML = `
-
-<h4>
-${song.title}
-</h4>
-
-<p>
-${song.artist}
-</p>
-
-`;
-
-div.onclick = ()=>{
-
-playlist.push(song);
-
-currentIndex =
-playlist.length - 1;
-
-renderPlaylist();
-
-div.onclick = () => {
-  // Hanya play, tidak push ke playlist
-  playMusic(song);
-};
-
-
-results.appendChild(div);
-
-});
-
+    results.appendChild(div);
+  });
 }
 
-searchBtn.onclick =
-searchMusic;
-
-searchInput
-.addEventListener(
-"keydown",
-(e)=>{
-
-if(
-e.key === "Enter" ||
-e.keyCode === 13
-){
-
-e.preventDefault();
-
-searchMusic();
-
-}
-
+// Event listener tetap sama
+searchBtn.onclick = searchMusic;
+searchInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.keyCode === 13) {
+    e.preventDefault();
+    searchMusic();
+  }
 });
+
 
 // ======================
 // PLAY MUSIC
